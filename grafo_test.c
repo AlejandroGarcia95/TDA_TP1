@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "heap.h"
+#include "path_finder.h"
 
 #define FALSE 0
 #define TRUE 0
@@ -158,5 +159,14 @@ void prueba_std() {
 int main() {
 	prueba_std();
 //	prueba_volumen(100);
+	
+	// Intentamos crear path_finder
+	
+	path_finder_t* pf = path_finder_crear();
+	
+	path_finder_fue_visitado(pf, "PEPE");
+	
+	path_finder_destruir(pf);
+	
 	return 0;
 }

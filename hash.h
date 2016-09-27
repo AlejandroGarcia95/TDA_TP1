@@ -11,9 +11,7 @@
 /* ******************************************************************
  *                DEFINICION DE LOS TIPOS DE DATOS
  * *****************************************************************/
-
-/* Vamos a hacer un hash abierto que va a estar re piola (?. */
-
+ 
 typedef struct hash hash_t;
 
 typedef struct hash_iter hash_iter_t;
