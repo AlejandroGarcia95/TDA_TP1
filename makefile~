@@ -50,7 +50,9 @@ valgrind_V: $(EXEC)
 rebuild: clean $(EXEC)
 
 repo: 
-	echo $(MENSAJE)
+	git add --all
+	git commit -m$(MENSAJE)
+	git push --all
 
 clean:
 	rm -f *.o $(EXEC)

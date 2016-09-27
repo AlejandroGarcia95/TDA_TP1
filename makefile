@@ -51,7 +51,7 @@ rebuild: clean $(EXEC)
 
 repo: 
 	git add --all
-	git commit -m$(MENSAJE)
+	git commit -m"$(MENSAJE)"
 	git push --all
 
 clean:
