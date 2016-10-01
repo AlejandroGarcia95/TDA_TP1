@@ -91,5 +91,14 @@ int grafo_devolver_peso_arista(grafo_t *grafo, char *origen, char *destino);
 // Pre: el grafo fue creado.
 void grafo_imprimir(grafo_t *grafo);
 
+// Devuelve una lista con las claves de todos los vértices 
+// del grafo. Si el grafo está vacío, devuelve una lista vacía.
+// Pre: el grafo fue creado.
+// Post: se devolvió la lista de vértices del grafo, o 	NULL en
+// caso de error.
+// NOTA: la lista se devuelve dinámicamente, por lo que debe ser
+// borrada por el usuario.
+lista_t* grafo_vertices(grafo_t* grafo);
+
 
 #endif // GRAFO_H

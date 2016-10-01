@@ -1,12 +1,12 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = "Hola"
+MENSAJE = "Dijkstra anda! Pendiente refactor"
 
 PRUEBAS= grafo_test.c
 EXEC = grafoExec
 PF = path_finder.o
 GRAFO = grafo.o
-TDAS = lista.o hash.o
+TDAS = lista.o hash.o heap.o
 
 VALGRIND= valgrind --track-origins=yes --leak-check=full
 VALGRIND-V= $(VALGRIND) -v 
@@ -51,7 +51,7 @@ rebuild: clean $(EXEC)
 
 repo: 
 	git add --all
-	git commit -m$(MENSAJE)
+	git commit -m"$(MENSAJE)"
 	git push --all
 
 clean:

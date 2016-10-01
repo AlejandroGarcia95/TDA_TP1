@@ -191,6 +191,37 @@ hash_t* grafo_devolver_conexiones(grafo_t* grafo) {
 	return grafo->nodos;
 }
 
+// Devuelve una lista con las claves de todos los vértices 
+// del grafo. Si el grafo está vacío, devuelve una lista vacía.
+// Pre: el grafo fue creado.
+// Post: se devolvió la lista de vértices del grafo, o 	NULL en
+// caso de error.
+// NOTA: la lista se devuelve dinámicamente, por lo que debe ser
+// borrada por el usuario, pero no las claves.
+lista_t* grafo_vertices(grafo_t* grafo){
+	lista_t* vertices = lista_crear();
+	if(!vertices)
+		return NULL;
+	hash_iter_t* it = hash_iter_crear(grafo->nodos);
+	if(!it){
+		lista_destruir(vertices, NULL);
+		return NULL;
+		}
+	
+	while(!hash_iter_al_final(it)){
+		if(!lista_insertar_ultimo(vertices, (void*)hash_iter_ver_actual(it))){
+		lista_destruir(vertices, NULL);
+		hash_iter_destruir(it);
+		return NULL;
+		}
+		hash_iter_avanzar(it);
+	}
+	hash_iter_destruir(it);
+	return vertices;
+	
+}
+
+
 // Imprime el grafo.
 // Pre: el grafo fue creado.
 void grafo_imprimir(grafo_t *grafo) {

@@ -139,7 +139,7 @@ void prueba_std() {
 	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 1);
 	ady = grafo_devolver_adyacentes(nuestro_grafo, "6");
 	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 0);
-
+/*
 	print_test("Vertices adyacentes antes de borrado", grafo_son_adyacentes(nuestro_grafo, "1", "4"));
 	grafo_borrar_arista(nuestro_grafo, "1", "4");
 	print_test("Vertices no adyacentes antes de borrado", !grafo_son_adyacentes(nuestro_grafo, "1", "4"));
@@ -151,22 +151,46 @@ void prueba_std() {
 	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
 	print_test("Vertice correcto pertenece", !grafo_pertenece(nuestro_grafo, "1"));
 	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "6"));
+	*/
+	
+
+	
+	
+	path_finder_t* pf = path_finder_crear();
+	
+	
+
+
+	path_finder_buscar_dijkstra(pf, nuestro_grafo, "9", "6");
+
+
+	lista_t* vertices = path_finder_camino(pf);
+	printf("CAMINO FINAL: \n");
+	lista_iter_t* it = lista_iter_crear(vertices);
+	while(!lista_iter_al_final(it)){
+		printf("%s\n", (char*)lista_iter_ver_actual(it));
+		lista_iter_avanzar(it);
+		}
+	lista_iter_destruir(it);
+	
+	
+	path_finder_destruir(pf);
 	
 	grafo_destruir(nuestro_grafo);
 }
 
 
+int compararP(const void *a, const void *b){
+	int real_a = ((int)a);
+	int real_b = ((int)b);
+	return real_b-real_a;
+}
+
 int main() {
 	prueba_std();
 //	prueba_volumen(100);
 	
-	// Intentamos crear path_finder
-	
-	path_finder_t* pf = path_finder_crear();
-	
-	path_finder_fue_visitado(pf, "PEPE");
-	
-	path_finder_destruir(pf);
+	// Intentamos crear heap
 	
 	return 0;
 }
