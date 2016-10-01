@@ -22,11 +22,13 @@
 // Estructura del path_finder
 typedef struct _pathfinder path_finder_t;
 
+typedef int (*heur_f) (char *origen, char *destino);
+
 // -------- PRIMITIVAS DEL PATHFINDER -------
 
 // Crea un path_finder. Devuelve NULL si no fue posible.
 // Post: el path_finder se creó o se devolvió NULL.
-path_finder_t* path_finder_crear();
+path_finder_t* path_finder_crear(heur_f heuristica);
 
 // Destruye el path_finder recibido.
 // Pre: el path_finder fue creado.
@@ -111,5 +113,12 @@ int path_finder_distancia(path_finder_t* pf, char* vertice);
 // NOTA: la lista resultante es de sólo consulta y no debe destruirse
 // dinámicamente.
 lista_t* path_finder_camino(path_finder_t* pf);
+
+// Devuelve la longitud del camino encontrado por el último recorrido.
+// Si no se encontró ningún camino, devuelve INFINITO.
+// Pre: el path_finder fue creado.
+// Post: se devolvió la longitud del último camino, calculada como
+// la suma de los pesos de todas las aristas involucradas en el mismo.
+int path_finder_longitud_camino(path_finder_t* pf);
 
 #endif // _PATHFINDER_H

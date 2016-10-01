@@ -27,17 +27,57 @@ struct _pathfinder{
 	hash_t* distancias;
 	hash_t* padres;
 	lista_t* camino_final;
-
+	int longitud_final;
+	heur_f h;
 	// Falta puntero a función heurística sdalfjhsaf
 };
 
-struct vert_dist{
+
+// Estructura auxiliar para guardar información de los vértices en
+// cada uno de los recorridos
+struct vert_data{
 	char* vertice;
 	int distancia;
 	char* padre;
 };
 
 // FUNCIONES PRIVADAS
+
+// Destructor de vert_data adaptado para el heap
+void vert_data_destruir(void *e){
+	struct vert_data* vActual = (struct vert_data*) e;
+	if(vActual->padre)
+		free(vActual->padre);
+	free(vActual);
+}
+
+struct vert_data* vert_data_crear(char* vert, int dist, char* padre){
+	struct vert_data* vd = malloc(sizeof(struct vert_data));
+	if(!vd)
+		return NULL;
+	vd->vertice = vert;
+	vd->distancia = dist;
+	vd->padre = (char*)malloc(sizeof(char)*(strlen(padre)+1));
+	if(!vd->padre){
+		free(vd);
+		return NULL;
+		}
+	strcpy(vd->padre, padre);
+	return vd;
+}
+
+/* Prototipo de función de comparación que se le pasa como parámetro a las
+ * diversas funciones del heap.
+ * Debe recibir dos punteros del tipo de dato utilizado en el heap, y
+ * debe devolver:
+ *   menor a 0  si  a < b
+ *       0      si  a == b
+ *   mayor a 0  si  a > b */
+int comparar(const void *a, const void *b){
+	struct vert_data* real_a = (struct vert_data*)a;
+	struct vert_data* real_b = (struct vert_data*)b;
+	return real_b->distancia -real_a->distancia;
+}
 
 // Crea los campos de nodos_visitados, distancias, padres y
 // camino_final del path_finder con memoria dinámica. Devuelve
@@ -69,7 +109,8 @@ bool inicializar_pathfinder(path_finder_t* pf){
 		hash_destruir(pf->padres);
 		hash_destruir(pf->nodos_visitados);
 		return FALSE;
-		}				
+		}
+	pf->longitud_final = INFINITO;				
 	return TRUE;
 }
 
@@ -82,18 +123,67 @@ void vaciar_pathfinder(path_finder_t* pf){
 		hash_destruir(pf->nodos_visitados);
 		lista_destruir(pf->camino_final, NULL);
 }
+
+// Inicializa las distancias, padres y visitados de todos los
+// vértices de un grafo antes de un determinado recorrido.
+// Los recorridos que la usen deben invocarla antes de iniciar
+// Pre: la lista de vértices posee a todos los vértices del grafo
+// Post: se inicializaron para todos los vértices los campos de
+// visitado, padre y distancia en FALSE, NULL, INFINITO en las
+// estructuras internas del path_finder
+bool inicializar_recorrido(path_finder_t* pf, lista_t* vertices){
+	lista_iter_t *l_it = lista_iter_crear(vertices);
+	if(!l_it)	return FALSE;
+	while(!lista_iter_al_final(l_it)){
+		char* v = (char*) lista_iter_ver_actual(l_it);			
+		hash_guardar(pf->nodos_visitados, v, (void*)FALSE);
+		hash_guardar(pf->distancias, v, (void*)INFINITO);
+		hash_guardar(pf->padres, v, NULL);
+		lista_iter_avanzar(l_it);
+		}
+	lista_iter_destruir(l_it);
+	return TRUE;
+}
+
+// Genera la lista del camino final encontrado por la última búsqueda
+// de recorrido, a partir de un par de vértices destino y origen.
+// Devuelve TRUE si fue posible generar esta lista o FALSE en caso
+// contrario
+// Pre: el pf fue creado, origen y destino son nodos válidos
+// Post: se guardo en pf->camino_final una lista de los vértices en
+// el orden del recorrido correcto
+bool generar_camino_final(path_finder_t* pf, grafo_t* grafo, char* origen, char* destino){
+	char* vHijo = destino;
+	int longitud = 0;
+	while(strcmp(vHijo, origen)){
+		lista_insertar_primero(pf->camino_final, (void*) vHijo);
+		char* vPadre = (char*)hash_obtener(pf->padres, vHijo);
+		if(!vPadre){
+			lista_borrar_primero(pf->camino_final);
+			return FALSE;
+			}	
+		else{
+			longitud += grafo_devolver_peso_arista(grafo, vPadre, vHijo);
+			vHijo = vPadre;
+			}
+		
+		}
+	pf->longitud_final = longitud;
+	return TRUE;
+}
+
 // -------- PRIMITIVAS DEL PATHFINDER -------
 
 // Crea un path_finder. Devuelve NULL si no fue posible.
 // Post: el path_finder se creó o se devolvió NULL.
-path_finder_t* path_finder_crear(){
+path_finder_t* path_finder_crear(heur_f heuristica){
 	path_finder_t* pf = malloc(sizeof(path_finder_t));
 	if(!pf)
 		return NULL;
-	
-	if(inicializar_pathfinder(pf))
+	if(inicializar_pathfinder(pf)){
+		pf->h = heuristica;
 		return pf;
-
+		}
 	return NULL;
 }
 
@@ -106,25 +196,6 @@ void path_finder_destruir(path_finder_t* pf){
 }
 
 // -------- PRIMITIVAS DE RECORRIDO ---------
-/* Prototipo de función de comparación que se le pasa como parámetro a las
- * diversas funciones del heap.
- * Debe recibir dos punteros del tipo de dato utilizado en el heap, y
- * debe devolver:
- *   menor a 0  si  a < b
- *       0      si  a == b
- *   mayor a 0  si  a > b */
-int comparar(const void *a, const void *b){
-	struct vert_dist* real_a = (struct vert_dist*)a;
-	struct vert_dist* real_b = (struct vert_dist*)b;
-	return real_b->distancia -real_a->distancia;
-}
-
-void vert_destruir(void *e){
-	struct vert_dist* vActual = (struct vert_dist*) e;
-	if(vActual->padre)
-		free(vActual->padre);
-	free(vActual);
-}
 
 // Busca el camino más corto del vertice origen al vértice destino del
 // grafo recibido usando el algoritmo de Dijkstra. Devuelve FALSE si 
@@ -141,16 +212,11 @@ bool path_finder_buscar_dijkstra(path_finder_t* pf, grafo_t* grafo, char *origen
 	inicializar_pathfinder(pf);
 	// Inicializo distancias, padres y visitados
 	lista_t* vertices = grafo_vertices(grafo);
-	lista_iter_t *l_it = lista_iter_crear(vertices);
-	if(!l_it)	return FALSE;
-	while(!lista_iter_al_final(l_it)){
-		char* v = (char*) lista_iter_ver_actual(l_it);			
-		hash_guardar(pf->nodos_visitados, v, (void*)FALSE);
-		hash_guardar(pf->distancias, v, (void*)INFINITO);
-		hash_guardar(pf->padres, v, NULL);
-		lista_iter_avanzar(l_it);
+	if(!vertices) return FALSE;
+	if(!inicializar_recorrido(pf, vertices)){
+		lista_destruir(vertices, NULL);
+		return FALSE;
 		}
-	lista_iter_destruir(l_it);
 	// Inicializo la distancia y el visitado para el origen
 	hash_guardar(pf->distancias, origen, 0);
 	//hash_guardar(pf->nodos_visitados, origen, (void*)TRUE);
@@ -161,82 +227,59 @@ bool path_finder_buscar_dijkstra(path_finder_t* pf, grafo_t* grafo, char *origen
 		lista_destruir(vertices, NULL);
 		return FALSE;
 		}
-	struct vert_dist* inicial = malloc(sizeof(struct vert_dist));
+	struct vert_data* inicial = vert_data_crear(origen, 0, origen);
 	if(!inicial){
 		lista_destruir(vertices, NULL);
 		heap_destruir(q, NULL);
 		return FALSE;
 		}
-	inicial->vertice = origen;
-	inicial->distancia = 0;
-	inicial->padre = origen;
 	// Encolo nodo inicial
 	heap_encolar(q, (void*) inicial);
 	
 	while((!heap_esta_vacio(q)) && (cantVisitados < lista_largo(vertices))){
-		struct vert_dist* vActual = heap_desencolar(q);
+		struct vert_data* vActual = heap_desencolar(q);
 		if(!path_finder_fue_visitado(pf, vActual->vertice)){
 			cantVisitados++;
-			
 			hash_guardar(pf->distancias, vActual->vertice, (void*)vActual->distancia);
 			char* cadenita = (char*)malloc(sizeof(char)*(strlen(vActual->padre)+1));
-		
 			strcpy(cadenita, vActual->padre);
 			hash_guardar(pf->padres, vActual->vertice, (void*) cadenita);
 			hash_guardar(pf->nodos_visitados, vActual->vertice, (void*)TRUE);
 			hash_t* ady = grafo_devolver_adyacentes(grafo, vActual->vertice);
 			hash_iter_t* h_it = hash_iter_crear(ady);
 			if(!h_it){
-				heap_destruir(q, vert_destruir);
+				heap_destruir(q, vert_data_destruir);
 				lista_destruir(vertices, NULL);
 				return FALSE;
 				}
 			while(!hash_iter_al_final(h_it)){ // for w adyacente a v
 				char* w = (char*) hash_iter_ver_actual(h_it); 
 				if(!path_finder_fue_visitado(pf, w)){
-						struct vert_dist* wAdy = malloc(sizeof(struct vert_dist));
+						struct vert_data* wAdy = vert_data_crear(w, vActual->distancia + grafo_devolver_peso_arista(grafo, vActual->vertice, w), vActual->vertice);
 						if(!wAdy){
 							lista_destruir(vertices, NULL);
 							heap_destruir(q, free);
 							hash_iter_destruir(h_it);
 							return FALSE;
-							}
-						wAdy->vertice = w;
-						wAdy->distancia = vActual->distancia + grafo_devolver_peso_arista(grafo, vActual->vertice, w);
-						wAdy->padre = (char*)malloc(sizeof(char)*(strlen(vActual->vertice)+1));
-						strcpy(wAdy->padre, vActual->vertice);						
+							}					
 						// Encolo w adyacente
 						heap_encolar(q, (void*) wAdy);
 					}
 				hash_iter_avanzar(h_it);
 				}
 			hash_iter_destruir(h_it);
-			
 			}
-
-		
-		if(vActual->padre && vActual != inicial)
-			free(vActual->padre);
-		free(vActual);
+		vert_data_destruir((void*)vActual);
 		}
 	
 	// Acá encontré un camino => Lo guardo en la lista de camino
-	char* vHijo = destino;
-	while(strcmp(vHijo, origen)){
-		lista_insertar_primero(pf->camino_final, (void*) vHijo);
-		char* vPadre = (char*)hash_obtener(pf->padres, vHijo);
-		if(!vPadre){
-			heap_destruir(q, vert_destruir);
-			lista_destruir(vertices, NULL);
-			lista_borrar_primero(pf->camino_final);
-			return FALSE;
-			}	
-		else
-			vHijo = vPadre;
-		}
-	
-	heap_destruir(q, vert_destruir);
-	
+	if(!generar_camino_final(pf, grafo, origen, destino)){
+		heap_destruir(q, vert_data_destruir);
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}	
+			
+	heap_destruir(q, vert_data_destruir);
 	lista_destruir(vertices, NULL);
 	lista_insertar_primero(pf->camino_final, (void*) origen);
 	
@@ -273,7 +316,81 @@ bool path_finder_buscar_bfs(path_finder_t* pf, grafo_t* grafo, char *origen, cha
 bool path_finder_buscar_heuristica(path_finder_t* pf, grafo_t* grafo, char *origen, char *destino){
 	vaciar_pathfinder(pf);
 	inicializar_pathfinder(pf);
-	return FALSE;	
+	// Inicializo distancias, padres y visitados
+	lista_t* vertices = grafo_vertices(grafo);
+	if(!vertices) return FALSE;
+	if(!inicializar_recorrido(pf, vertices)){
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}
+	// Inicializo la distancia y el visitado para el origen
+	hash_guardar(pf->distancias, origen, 0);
+	//hash_guardar(pf->nodos_visitados, origen, (void*)TRUE);
+	
+	int cantVisitados = 0;
+	heap_t* q = heap_crear(comparar);
+	if(!q){
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}
+	struct vert_data* inicial = vert_data_crear(origen, 0, origen);
+	if(!inicial){
+		lista_destruir(vertices, NULL);
+		heap_destruir(q, NULL);
+		return FALSE;
+		}
+	// Encolo nodo inicial
+	heap_encolar(q, (void*) inicial);
+	
+	while((!heap_esta_vacio(q)) && (cantVisitados < lista_largo(vertices))){
+		struct vert_data* vActual = heap_desencolar(q);
+		if(!path_finder_fue_visitado(pf, vActual->vertice)){
+			cantVisitados++;
+			hash_guardar(pf->distancias, vActual->vertice, (void*)vActual->distancia);
+			char* cadenita = (char*)malloc(sizeof(char)*(strlen(vActual->padre)+1));
+			strcpy(cadenita, vActual->padre);
+			hash_guardar(pf->padres, vActual->vertice, (void*) cadenita);
+			hash_guardar(pf->nodos_visitados, vActual->vertice, (void*)TRUE);
+			hash_t* ady = grafo_devolver_adyacentes(grafo, vActual->vertice);
+			hash_iter_t* h_it = hash_iter_crear(ady);
+			if(!h_it){
+				heap_destruir(q, vert_data_destruir);
+				lista_destruir(vertices, NULL);
+				return FALSE;
+				}
+			while(!hash_iter_al_final(h_it)){ // for w adyacente a v
+				char* w = (char*) hash_iter_ver_actual(h_it); 
+				if(!path_finder_fue_visitado(pf, w)){
+						int ld = vActual->distancia + pf->h(vActual->vertice, w);
+						struct vert_data* wAdy = vert_data_crear(w, ld, vActual->vertice);
+						if(!wAdy){
+							lista_destruir(vertices, NULL);
+							heap_destruir(q, free);
+							hash_iter_destruir(h_it);
+							return FALSE;
+							}					
+						// Encolo w adyacente
+						heap_encolar(q, (void*) wAdy);
+					}
+				hash_iter_avanzar(h_it);
+				}
+			hash_iter_destruir(h_it);
+			}
+		vert_data_destruir((void*)vActual);
+		}
+	
+	// Acá encontré un camino => Lo guardo en la lista de camino
+	if(!generar_camino_final(pf, grafo, origen, destino)){
+		heap_destruir(q, vert_data_destruir);
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}	
+			
+	heap_destruir(q, vert_data_destruir);
+	lista_destruir(vertices, NULL);
+	lista_insertar_primero(pf->camino_final, (void*) origen);
+	
+	return TRUE;	
 }
 
 // Busca el camino más corto del vertice origen al vértice destino del
@@ -331,3 +448,11 @@ lista_t* path_finder_camino(path_finder_t* pf){
 	return pf->camino_final;
 }
 
+// Devuelve la longitud del camino encontrado por el último recorrido.
+// Si no se encontró ningún camino, devuelve INFINITO.
+// Pre: el path_finder fue creado.
+// Post: se devolvió la longitud del último camino, calculada como
+// la suma de los pesos de todas las aristas involucradas en el mismo.
+int path_finder_longitud_camino(path_finder_t* pf){
+	return pf->longitud_final;
+}

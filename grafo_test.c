@@ -25,6 +25,10 @@ void destruir_arreglo_claves(char** arr, size_t cantidad) {
 	free(arr);
 }
 
+int Superheuristica(char *origen, char* destino){
+	return 8;
+}
+
 char** generar_claves_rnd(size_t cantidad, size_t longitud) {
 	char** arr_claves = malloc(sizeof(char*) * cantidad);
 	if (!arr_claves) return NULL;
@@ -67,8 +71,6 @@ void prueba_volumen(int cantidad) {
 		grafo_crear_arista(ng, claves[pos1], claves[pos2], true, peso);
 	}
 	grafo_imprimir(ng);
-
-
 
 	grafo_destruir(ng);
 	destruir_arreglo_claves(claves, cantidad);
@@ -156,12 +158,10 @@ void prueba_std() {
 
 	
 	
-	path_finder_t* pf = path_finder_crear();
+	path_finder_t* pf = path_finder_crear(Superheuristica);
 	
 	
-
-
-	path_finder_buscar_dijkstra(pf, nuestro_grafo, "9", "6");
+	path_finder_buscar_heuristica(pf, nuestro_grafo, "10", "4");
 
 
 	lista_t* vertices = path_finder_camino(pf);
@@ -172,6 +172,8 @@ void prueba_std() {
 		lista_iter_avanzar(it);
 		}
 	lista_iter_destruir(it);
+	
+	printf("LONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
 	
 	
 	path_finder_destruir(pf);
