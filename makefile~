@@ -1,6 +1,6 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = Dijkstra anda! Pendiente refactor
+MENSAJE = Que locoo
 
 PRUEBAS= grafo_test.c
 EXEC = grafoExec

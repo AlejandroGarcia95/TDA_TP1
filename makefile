@@ -1,6 +1,6 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = Que locoo
+MENSAJE = Recorridos parametrizados
 
 PRUEBAS= grafo_test.c
 EXEC = grafoExec

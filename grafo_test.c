@@ -121,7 +121,7 @@ void prueba_std() {
 	grafo_crear_arista(nuestro_grafo, "10", "2", FALSE, 5);
 	grafo_crear_arista(nuestro_grafo, "9", "2", FALSE, 15);
 	grafo_crear_arista(nuestro_grafo, "9", "10", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "9", "8", FALSE, 20);
+	grafo_crear_arista(nuestro_grafo, "9", "8", FALSE, 200000);
 
 	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "1", "5")==20);
 	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "2", "3")==5);
@@ -161,7 +161,7 @@ void prueba_std() {
 	path_finder_t* pf = path_finder_crear(Superheuristica);
 	
 	
-	path_finder_buscar_heuristica(pf, nuestro_grafo, "10", "4");
+	path_finder_buscar_a_star(pf, nuestro_grafo, "9", "4");
 
 
 	lista_t* vertices = path_finder_camino(pf);
