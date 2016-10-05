@@ -1,8 +1,8 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = Todos hechos
+MENSAJE = Generacion de mapas
 
-PRUEBAS= grafo_test.c
+PRUEBAS= laberintos.c
 EXEC = grafoExec
 PF = path_finder.o
 GRAFO = grafo.o

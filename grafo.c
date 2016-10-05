@@ -90,7 +90,7 @@ bool grafo_crear_arista(grafo_t *grafo, char *origen, char *destino, bool idayvu
 	// Hasta aca agregue el camino origen->destino. Me falta ver
 	// si tengo que agregar el camino destino->origen
 	if(idayvuelta)
-		return grafo_crear_arista(grafo, destino, origen, false, peso); 
+		return grafo_crear_arista(grafo, destino, origen, 0, peso); 
 	return true;
 }
 

@@ -1,0 +1,234 @@
+#include "lista.h"
+#include "hash.h"
+#include "grafo.h"
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
+#include "heap.h"
+#include "path_finder.h"
+
+#define FALSE 0
+#define TRUE 0
+
+
+/* Función auxiliar para imprimir si estuvo OK o no. */
+void print_test(char* name, bool result) {
+	printf("%s: %s\n", name, result? "OK" : "ERROR");
+}
+
+/*	FUNCIONES AUXILIARES PARA GENERAR EL GRAFO/MAPA 	*/
+
+/* Genera un grafo a modo de cuadrícula de tamaño anchoX por largoY.
+Cada nodo del grafo tiene de clave el string "(x, y)" siendo esta la
+coordenada x,y del nodo en la cuadrícula. Además, la función se encarga
+de conectar cada nodo con sus cuatro nodos adyacentes en direcciones
+arriba, abajo, izquierda y derecha y de forma ida y vuelta con peso 1*/
+grafo_t* generar_cuadricula(int anchoX, int largoY){
+	grafo_t *mapa = grafo_crear();
+	if(!mapa) return NULL;
+	// Creo primero todos los vértices
+	char nodo[10];
+	for(int i = 0; i < anchoX; i++)
+		for(int j = 0; j < largoY; j++){
+			sprintf(nodo, "(%d, %d)", i, j);
+			grafo_crear_vertice(mapa, nodo);
+			}
+
+	// Ahora para todos los vértices, agrego sus cuatro adyacentes
+	char adyAbajo[10], adyArriba[10], adyDer[10], adyIzq[10];
+	for(int i = 0; i < anchoX; i++)
+		for(int j = 0; j < largoY; j++){
+			sprintf(nodo, "(%d, %d)", i, j);
+			sprintf(adyAbajo, "(%d, %d)", i, j+1);
+			sprintf(adyArriba, "(%d, %d)", i, j-1);
+			sprintf(adyDer, "(%d, %d)", i+1, j);
+			sprintf(adyIzq, "(%d, %d)", i-1, j);
+			grafo_crear_arista(mapa, nodo, adyAbajo, FALSE, 1);
+			grafo_crear_arista(mapa, nodo, adyDer, FALSE, 1);
+			grafo_crear_arista(mapa, nodo, adyArriba, FALSE, 1);
+			grafo_crear_arista(mapa, nodo, adyIzq, FALSE, 1);
+		}
+	return mapa;
+}
+
+/* Elimina un área rectangular del mapa cuadriculado, representada por
+los vértices (origenX, origenY) hasta (finX, finY). NOTA: se asume que
+origenX <= finX y que origenY <= finY. Así, se eliminan del grafo/mapa
+todos los vértices que estén adentro del rectángulo de vértices
+(origenX, origenY) hasta (finX, finY)*/
+void eliminar_area(grafo_t* mapa, int origenX, int origenY, int finX, int finY){
+	char nodo[10];
+	for(int i = origenX; i <= finX; i++)
+		for(int j = origenY; j <= finY; j++){
+			sprintf(nodo, "(%d, %d)", i, j);
+			grafo_borrar_vertice(mapa, nodo);
+			}
+}
+
+int Superheuristica(char *origen, char* destino){
+	return 8;
+}
+
+
+
+
+void prueba_std() {
+	grafo_t *nuestro_grafo = grafo_crear();
+	print_test("Se creo el grafo", nuestro_grafo);
+	print_test("El grafo esta vacio", grafo_esta_vacio(nuestro_grafo));
+	
+	// Creo los vértices del grafo
+	grafo_crear_vertice(nuestro_grafo, "1");
+	grafo_crear_vertice(nuestro_grafo, "2");
+	grafo_crear_vertice(nuestro_grafo, "3");
+	grafo_crear_vertice(nuestro_grafo, "4");
+	grafo_crear_vertice(nuestro_grafo, "5");
+	grafo_crear_vertice(nuestro_grafo, "6");
+	grafo_crear_vertice(nuestro_grafo, "7");
+	grafo_crear_vertice(nuestro_grafo, "8");
+	grafo_crear_vertice(nuestro_grafo, "9");
+	
+	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 9);
+	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
+	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "2"));
+	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "19"));
+	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "F"));
+	
+	// Creo las aristas 
+	grafo_crear_arista(nuestro_grafo, "1", "2", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "1", "3", FALSE, 3);
+	grafo_crear_arista(nuestro_grafo, "1", "7", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "2", "4", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "2", "6", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "3", "5", FALSE, 5);
+	grafo_crear_arista(nuestro_grafo, "4", "7", FALSE, 4);
+	grafo_crear_arista(nuestro_grafo, "5", "7", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "5", "8", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "6", "4", FALSE, 3);
+	grafo_crear_arista(nuestro_grafo, "6", "5", FALSE, 9);
+	grafo_crear_arista(nuestro_grafo, "7", "9", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "8", "9", FALSE, 2);
+
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "1", "2")==2);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "2", "4")==2);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "3", "5")==5);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "5", "8")==10);
+	print_test("Peso correcto de arista inexistente",  grafo_devolver_peso_arista(nuestro_grafo, "2", "8")==-1);
+	
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "1", "8"));
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "4", "7"));
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "5", "7"));
+	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "9"));
+	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "4", "6"));
+
+	hash_t* ady = grafo_devolver_adyacentes(nuestro_grafo, "1");
+	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 3);
+	ady = grafo_devolver_adyacentes(nuestro_grafo, "5");
+	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 2);
+	ady = grafo_devolver_adyacentes(nuestro_grafo, "9");
+	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 0);
+/*
+	print_test("Vertices adyacentes antes de borrado", grafo_son_adyacentes(nuestro_grafo, "1", "4"));
+	grafo_borrar_arista(nuestro_grafo, "1", "4");
+	print_test("Vertices no adyacentes antes de borrado", !grafo_son_adyacentes(nuestro_grafo, "1", "4"));
+	ady = grafo_devolver_adyacentes(nuestro_grafo, "1");
+	print_test("Cantidad de adyacentes post borrado es correcta", hash_cantidad(ady) == 4);
+	
+	grafo_borrar_vertice(nuestro_grafo, "1");
+	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 9);
+	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
+	print_test("Vertice correcto pertenece", !grafo_pertenece(nuestro_grafo, "1"));
+	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "6"));
+	*/
+	
+
+	
+	
+	path_finder_t* pf = path_finder_crear(Superheuristica);
+	
+	
+	path_finder_buscar_dijkstra(pf, nuestro_grafo, "1", "9");
+
+
+	lista_t* vertices = path_finder_camino(pf);
+	printf("CAMINO FINAL: \n");
+	lista_iter_t* it = lista_iter_crear(vertices);
+	while(!lista_iter_al_final(it)){
+		printf("%s\n", (char*)lista_iter_ver_actual(it));
+		lista_iter_avanzar(it);
+		}
+	lista_iter_destruir(it);
+	
+	printf("LONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
+	
+	
+	path_finder_destruir(pf);
+	
+	grafo_destruir(nuestro_grafo);
+}
+
+
+int compararP(const void *a, const void *b){
+	int real_a = ((int)a);
+	int real_b = ((int)b);
+	return real_b-real_a;
+}
+
+grafo_t* generar_mapa_pacman(){
+	grafo_t* mapa = generar_cuadricula(17, 7);
+		
+	eliminar_area(mapa, 1, 1, 2, 1);
+	eliminar_area(mapa, 1, 3, 2, 3);
+	eliminar_area(mapa, 1, 4, 1, 5);
+	eliminar_area(mapa, 4, 1, 4, 3);
+	eliminar_area(mapa, 5, 3, 5, 4);
+	eliminar_area(mapa, 3, 5, 4, 5);
+	eliminar_area(mapa, 6, 5, 10, 5);
+	eliminar_area(mapa, 8, 1, 8, 4);
+	eliminar_area(mapa, 12, 5, 13, 5);
+	eliminar_area(mapa, 14, 1, 15, 1);
+	eliminar_area(mapa, 14, 3, 15, 3);
+	eliminar_area(mapa, 15, 4, 15, 5);
+	eliminar_area(mapa, 12, 1, 12, 2);
+	eliminar_area(mapa, 10, 3, 12, 3);
+	eliminar_area(mapa, 6, 0, 6, 1);
+	eliminar_area(mapa, 10, 0, 10, 1);
+	
+	return mapa;
+}
+
+int main() {
+	
+	grafo_t* mapa = generar_mapa_pacman();
+	
+	path_finder_t* pf = path_finder_crear(Superheuristica);
+	
+	
+	path_finder_buscar_bfs(pf, mapa, "(4, 0)", "(16, 2)");
+	printf("HAGO BFS DEL (4, 0) AL (16, 2)\n");
+
+	lista_t* vertices = path_finder_camino(pf);
+	printf("CAMINO FINAL: \n");
+	lista_iter_t* it = lista_iter_crear(vertices);
+	while(!lista_iter_al_final(it)){
+		printf("%s  ", (char*)lista_iter_ver_actual(it));
+		lista_iter_avanzar(it);
+		}
+	lista_iter_destruir(it);
+	
+	printf("\nLONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
+	
+	
+	path_finder_destruir(pf);
+	
+	grafo_destruir(mapa);
+	
+//	prueba_volumen(100);
+	
+	// Intentamos crear heap
+	
+	return 0;
+}
