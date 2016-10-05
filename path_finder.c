@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "lista.h"
+#include "cola.h"
 #include "hash.h"
 #include "grafo.h"
 #include <string.h>
@@ -168,6 +169,7 @@ bool generar_camino_final(path_finder_t* pf, grafo_t* grafo, char* origen, char*
 			}
 		}
 	pf->longitud_final = longitud;
+	lista_insertar_primero(pf->camino_final, (void*) origen);
 	return TRUE;
 }
 
@@ -269,7 +271,7 @@ bool ejecutar_recorrido(path_finder_t* pf, grafo_t* grafo, char *origen,
 			
 	heap_destruir(q, vert_data_destruir);
 	lista_destruir(vertices, NULL);
-	lista_insertar_primero(pf->camino_final, (void*) origen);
+	
 	
 	return TRUE;
 }
@@ -324,7 +326,80 @@ bool path_finder_buscar_dijkstra(path_finder_t* pf, grafo_t* grafo, char *origen
 // contrario. Los campos de vértices visitados, padres y distancias
 // fueron actualizados, y el camino encontrado también.
 bool path_finder_buscar_bfs(path_finder_t* pf, grafo_t* grafo, char *origen, char *destino){
-	return ejecutar_recorrido(pf, grafo, origen, destino, 0, 0, 1);
+	vaciar_pathfinder(pf);
+	inicializar_pathfinder(pf);
+	// Inicializo distancias, padres y visitados
+	lista_t* vertices = grafo_vertices(grafo);
+	if(!vertices) return FALSE;
+	if(!inicializar_recorrido(pf, vertices)){
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}
+	// Inicializo la distancia y el visitado para el origen
+	hash_guardar(pf->distancias, origen, 0);
+	hash_guardar(pf->nodos_visitados, origen, (void*)TRUE);
+	
+	int cantVisitados = 0;
+	cola_t* q = cola_crear();
+	if(!q) {
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}
+		
+	struct vert_data* inicial = vert_data_crear(origen, 0, origen);
+	if(!inicial){
+		lista_destruir(vertices, NULL);
+		cola_destruir(q, NULL);
+		return FALSE;
+		}
+	cola_encolar(q, (void*)inicial);
+		
+	while((!cola_esta_vacia(q)) && (cantVisitados < lista_largo(vertices))){
+		struct vert_data* vActual = cola_desencolar(q);
+		cantVisitados++;
+		hash_guardar(pf->distancias, vActual->vertice, (void*)vActual->distancia);
+		char* cadenita = (char*)malloc(sizeof(char)*(strlen(vActual->padre)+1));
+		strcpy(cadenita, vActual->padre);
+		hash_guardar(pf->padres, vActual->vertice, (void*) cadenita);
+		hash_t* ady = grafo_devolver_adyacentes(grafo, vActual->vertice);
+		hash_iter_t* h_it = hash_iter_crear(ady);
+		if(!h_it){
+			cola_destruir(q, vert_data_destruir);
+			lista_destruir(vertices, NULL);
+			return FALSE;
+			}
+		while(!hash_iter_al_final(h_it)){ // for w adyacente a v
+			char* w = (char*) hash_iter_ver_actual(h_it); 
+			if(!path_finder_fue_visitado(pf, w)){
+					hash_guardar(pf->nodos_visitados, w, (void*)TRUE);
+					int ld = vActual->distancia + 1;
+					struct vert_data* wAdy = vert_data_crear(w, ld, vActual->vertice);
+					if(!wAdy){
+						lista_destruir(vertices, NULL);
+						cola_destruir(q, free);
+						hash_iter_destruir(h_it);
+						return FALSE;
+						}					
+					// Encolo w adyacente
+					cola_encolar(q, (void*) wAdy);
+				}
+			hash_iter_avanzar(h_it);
+			}
+		hash_iter_destruir(h_it);
+		
+		vert_data_destruir((void*)vActual);
+		}	
+	// Acá encontré un camino => Lo guardo en la lista de camino
+	if(!generar_camino_final(pf, grafo, origen, destino)){
+		cola_destruir(q, vert_data_destruir);
+		lista_destruir(vertices, NULL);
+		return FALSE;
+		}	
+		
+	
+	cola_destruir(q, vert_data_destruir);
+	lista_destruir(vertices, NULL);
+	return TRUE;
 }
 
 // Busca el camino más corto del vertice origen al vértice destino del

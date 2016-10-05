@@ -1,12 +1,12 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = Recorridos parametrizados
+MENSAJE = Todos hechos
 
 PRUEBAS= grafo_test.c
 EXEC = grafoExec
 PF = path_finder.o
 GRAFO = grafo.o
-TDAS = lista.o hash.o heap.o
+TDAS = lista.o hash.o heap.o cola.o
 
 VALGRIND= valgrind --track-origins=yes --leak-check=full
 VALGRIND-V= $(VALGRIND) -v 

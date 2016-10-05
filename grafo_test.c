@@ -93,53 +93,45 @@ void prueba_std() {
 	grafo_crear_vertice(nuestro_grafo, "7");
 	grafo_crear_vertice(nuestro_grafo, "8");
 	grafo_crear_vertice(nuestro_grafo, "9");
-	grafo_crear_vertice(nuestro_grafo, "10");
 	
-	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 10);
+	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 9);
 	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
 	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "2"));
 	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "19"));
 	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "F"));
 	
 	// Creo las aristas 
-	grafo_crear_arista(nuestro_grafo, "1", "4", FALSE, 20);
-	grafo_crear_arista(nuestro_grafo, "1", "5", FALSE, 20);
-	grafo_crear_arista(nuestro_grafo, "1", "6", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "1", "7", FALSE, 15);
-	grafo_crear_arista(nuestro_grafo, "2", "4", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "2", "3", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "3", "2", FALSE, 15);
-	grafo_crear_arista(nuestro_grafo, "1", "2", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "8", "1", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "8", "2", FALSE, 20);
-	grafo_crear_arista(nuestro_grafo, "8", "7", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "7", "6", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "5", "6", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "4", "5", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "3", "4", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "10", "3", FALSE, 15);
-	grafo_crear_arista(nuestro_grafo, "10", "2", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "9", "2", FALSE, 15);
-	grafo_crear_arista(nuestro_grafo, "9", "10", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "9", "8", FALSE, 200000);
+	grafo_crear_arista(nuestro_grafo, "1", "2", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "1", "3", FALSE, 3);
+	grafo_crear_arista(nuestro_grafo, "1", "7", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "2", "4", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "2", "6", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "3", "5", FALSE, 5);
+	grafo_crear_arista(nuestro_grafo, "4", "7", FALSE, 4);
+	grafo_crear_arista(nuestro_grafo, "5", "7", FALSE, 2);
+	grafo_crear_arista(nuestro_grafo, "5", "8", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "6", "4", FALSE, 3);
+	grafo_crear_arista(nuestro_grafo, "6", "5", FALSE, 9);
+	grafo_crear_arista(nuestro_grafo, "7", "9", FALSE, 10);
+	grafo_crear_arista(nuestro_grafo, "8", "9", FALSE, 2);
 
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "1", "5")==20);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "2", "3")==5);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "3", "2")==15);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "8", "7")==5);
-	print_test("Peso correcto de arista inexistente",  grafo_devolver_peso_arista(nuestro_grafo, "2", "6")==-1);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "1", "2")==2);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "2", "4")==2);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "3", "5")==5);
+	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "5", "8")==10);
+	print_test("Peso correcto de arista inexistente",  grafo_devolver_peso_arista(nuestro_grafo, "2", "8")==-1);
 	
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "1", "6"));
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "4", "5"));
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "10", "2"));
-	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "8"));
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "1", "8"));
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "4", "7"));
+	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "5", "7"));
+	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "9"));
 	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "4", "6"));
 
 	hash_t* ady = grafo_devolver_adyacentes(nuestro_grafo, "1");
-	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 5);
+	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 3);
 	ady = grafo_devolver_adyacentes(nuestro_grafo, "5");
-	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 1);
-	ady = grafo_devolver_adyacentes(nuestro_grafo, "6");
+	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 2);
+	ady = grafo_devolver_adyacentes(nuestro_grafo, "9");
 	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 0);
 /*
 	print_test("Vertices adyacentes antes de borrado", grafo_son_adyacentes(nuestro_grafo, "1", "4"));
@@ -161,7 +153,7 @@ void prueba_std() {
 	path_finder_t* pf = path_finder_crear(Superheuristica);
 	
 	
-	path_finder_buscar_a_star(pf, nuestro_grafo, "9", "4");
+	path_finder_buscar_dijkstra(pf, nuestro_grafo, "1", "9");
 
 
 	lista_t* vertices = path_finder_camino(pf);
