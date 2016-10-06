@@ -19,7 +19,27 @@ void print_test(char* name, bool result) {
 	printf("%s: %s\n", name, result? "OK" : "ERROR");
 }
 
-/*	FUNCIONES AUXILIARES PARA GENERAR EL GRAFO/MAPA 	*/
+/* Función heurística usada para los recorridos. Esta heurística
+ devuelve la distancia hamiltoniana entre dos nodos */
+int superheuristica(char *origen, char* destino){
+	char* pc = &origen[1];
+	int xi = (int) strtod(pc, &pc);
+	pc += 2; 
+	int yi = (int) strtod(pc, NULL);
+	pc = &destino[1];
+	int xf = (int) strtod(pc, &pc);
+	pc += 2; 
+	int yf = (int) strtod(pc, NULL);
+	int delta_y = yf - yi;
+	if(delta_y < 0)
+		delta_y *= -1;
+	int delta_x = xf - xi;
+	if(delta_x < 0)
+		delta_x *= -1;
+	return delta_y + delta_x;
+}
+
+/*		FUNCIONES AUXILIARES PARA GENERAR EL GRAFO/MAPA 	*/
 
 /* Genera un grafo a modo de cuadrícula de tamaño anchoX por largoY.
 Cada nodo del grafo tiene de clave el string "(x, y)" siendo esta la
@@ -68,113 +88,109 @@ void eliminar_area(grafo_t* mapa, int origenX, int origenY, int finX, int finY){
 			}
 }
 
-int Superheuristica(char *origen, char* destino){
-	return 8;
+/* Función auxiliar usada para el mapa_pokemon que convierte un nodo
+en una celda de desfiladero (sólo se la puede atravesar de arriba
+hacia abajo con peso 1 y no en ninguna dirección más)*/
+void hacer_desfiladero(grafo_t* grafo, int x, int y){
+	char nodo[10];
+	char adyAbajo[10], adyArriba[10], adyDer[10], adyIzq[10];
+	sprintf(nodo, "(%d, %d)", x, y);
+	sprintf(adyAbajo, "(%d, %d)", x, y+1);
+	sprintf(adyArriba, "(%d, %d)", x, y-1);
+	sprintf(adyDer, "(%d, %d)", x+1, y);
+	sprintf(adyIzq, "(%d, %d)", x-1, y);
+	
+	grafo_borrar_arista(grafo, nodo, adyDer);
+	grafo_borrar_arista(grafo, nodo, adyIzq);
+	grafo_borrar_arista(grafo, adyDer, nodo);
+	grafo_borrar_arista(grafo, adyIzq, nodo);
+
+	grafo_borrar_arista(grafo, nodo, adyArriba);
+	grafo_borrar_arista(grafo, adyAbajo, nodo);
 }
 
+/* Función auxiliar usada para el mapa_pokemon que convierte un nodo
+en una celda de hierba (sus aristas incidentes tienen peso 5)*/
+void hacer_hierba(grafo_t* mapa, int x, int y){
+	char nodo[10];
+	char adyAbajo[10], adyArriba[10], adyDer[10], adyIzq[10];
+	sprintf(nodo, "(%d, %d)", x, y);
+	sprintf(adyAbajo, "(%d, %d)", x, y+1);
+	sprintf(adyArriba, "(%d, %d)", x, y-1);
+	sprintf(adyDer, "(%d, %d)", x+1, y);
+	sprintf(adyIzq, "(%d, %d)", x-1, y);
+	
+	grafo_crear_arista(mapa, nodo, adyAbajo, TRUE, 5);
+	grafo_crear_arista(mapa, nodo, adyDer, TRUE, 5);
+	grafo_crear_arista(mapa, nodo, adyIzq, TRUE, 5);
+	grafo_crear_arista(mapa, adyArriba, nodo, TRUE, 5);
+	grafo_crear_arista(mapa, adyAbajo, nodo, TRUE, 5);
+	grafo_crear_arista(mapa, adyDer, nodo, TRUE, 5);
+	grafo_crear_arista(mapa, adyIzq, nodo, TRUE, 5);
+	grafo_crear_arista(mapa, adyArriba, nodo, TRUE, 5);
+}
 
+/* Función auxiliar usada para el mapa_pokemon que convierte un área
+rectangular en un área de hierba.*/
+void hacer_area_hierba(grafo_t* mapa, int origenX, int origenY, int finX, int finY){
+	for(int i = origenX; i <= finX; i++)
+		for(int j = origenY; j <= finY; j++)
+			hacer_hierba(mapa, i, j);
+}
 
+/*	FUNCIONES QUE GENERAN LOS TRES GRAFOS/MAPAS DE EJEMPLO 	*/
 
-void prueba_std() {
-	grafo_t *nuestro_grafo = grafo_crear();
-	print_test("Se creo el grafo", nuestro_grafo);
-	print_test("El grafo esta vacio", grafo_esta_vacio(nuestro_grafo));
-	
-	// Creo los vértices del grafo
-	grafo_crear_vertice(nuestro_grafo, "1");
-	grafo_crear_vertice(nuestro_grafo, "2");
-	grafo_crear_vertice(nuestro_grafo, "3");
-	grafo_crear_vertice(nuestro_grafo, "4");
-	grafo_crear_vertice(nuestro_grafo, "5");
-	grafo_crear_vertice(nuestro_grafo, "6");
-	grafo_crear_vertice(nuestro_grafo, "7");
-	grafo_crear_vertice(nuestro_grafo, "8");
-	grafo_crear_vertice(nuestro_grafo, "9");
-	
-	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 9);
-	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
-	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "2"));
-	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "19"));
-	print_test("Vertice incorrecto no pertenece", !grafo_pertenece(nuestro_grafo, "F"));
-	
-	// Creo las aristas 
-	grafo_crear_arista(nuestro_grafo, "1", "2", FALSE, 2);
-	grafo_crear_arista(nuestro_grafo, "1", "3", FALSE, 3);
-	grafo_crear_arista(nuestro_grafo, "1", "7", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "2", "4", FALSE, 2);
-	grafo_crear_arista(nuestro_grafo, "2", "6", FALSE, 2);
-	grafo_crear_arista(nuestro_grafo, "3", "5", FALSE, 5);
-	grafo_crear_arista(nuestro_grafo, "4", "7", FALSE, 4);
-	grafo_crear_arista(nuestro_grafo, "5", "7", FALSE, 2);
-	grafo_crear_arista(nuestro_grafo, "5", "8", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "6", "4", FALSE, 3);
-	grafo_crear_arista(nuestro_grafo, "6", "5", FALSE, 9);
-	grafo_crear_arista(nuestro_grafo, "7", "9", FALSE, 10);
-	grafo_crear_arista(nuestro_grafo, "8", "9", FALSE, 2);
+grafo_t* generar_mapa_pokemon(){
+	grafo_t* mapa = generar_cuadricula(11, 14);
 
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "1", "2")==2);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "2", "4")==2);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "3", "5")==5);
-	print_test("Peso correcto de arista",  grafo_devolver_peso_arista(nuestro_grafo, "5", "8")==10);
-	print_test("Peso correcto de arista inexistente",  grafo_devolver_peso_arista(nuestro_grafo, "2", "8")==-1);
+	eliminar_area(mapa, 9, 0, 10, 1);
+	eliminar_area(mapa, 5, 12, 6, 13);
+	eliminar_area(mapa, 4, 4, 5, 7);
+	eliminar_area(mapa, 6, 5, 7, 6);
 	
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "1", "8"));
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "4", "7"));
-	print_test("Vertices adyacentes lo son", grafo_son_adyacentes(nuestro_grafo, "5", "7"));
-	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "9"));
-	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "4", "6"));
-
-	hash_t* ady = grafo_devolver_adyacentes(nuestro_grafo, "1");
-	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 3);
-	ady = grafo_devolver_adyacentes(nuestro_grafo, "5");
-	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 2);
-	ady = grafo_devolver_adyacentes(nuestro_grafo, "9");
-	print_test("Cantidad de adyacentes de vertice es correcta", hash_cantidad(ady) == 0);
-/*
-	print_test("Vertices adyacentes antes de borrado", grafo_son_adyacentes(nuestro_grafo, "1", "4"));
-	grafo_borrar_arista(nuestro_grafo, "1", "4");
-	print_test("Vertices no adyacentes antes de borrado", !grafo_son_adyacentes(nuestro_grafo, "1", "4"));
-	ady = grafo_devolver_adyacentes(nuestro_grafo, "1");
-	print_test("Cantidad de adyacentes post borrado es correcta", hash_cantidad(ady) == 4);
-	
-	grafo_borrar_vertice(nuestro_grafo, "1");
-	print_test("Cantidad de vertices correcta", grafo_cantidad(nuestro_grafo) == 9);
-	print_test("Vertice correcto pertenece", grafo_pertenece(nuestro_grafo, "6"));
-	print_test("Vertice correcto pertenece", !grafo_pertenece(nuestro_grafo, "1"));
-	print_test("Vertices no adyacentes no lo son", !grafo_son_adyacentes(nuestro_grafo, "1", "6"));
-	*/
-	
-
-	
-	
-	path_finder_t* pf = path_finder_crear(Superheuristica);
-	
-	
-	path_finder_buscar_dijkstra(pf, nuestro_grafo, "1", "9");
-
-
-	lista_t* vertices = path_finder_camino(pf);
-	printf("CAMINO FINAL: \n");
-	lista_iter_t* it = lista_iter_crear(vertices);
-	while(!lista_iter_al_final(it)){
-		printf("%s\n", (char*)lista_iter_ver_actual(it));
-		lista_iter_avanzar(it);
+	for(int i = 0; i <= 3; i++){
+		hacer_desfiladero(mapa, i, 4);
+		hacer_desfiladero(mapa, i, 11);
 		}
-	lista_iter_destruir(it);
 	
-	printf("LONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
-	
-	
-	path_finder_destruir(pf);
-	
-	grafo_destruir(nuestro_grafo);
+	hacer_area_hierba(mapa, 6, 0, 8, 0);
+	hacer_area_hierba(mapa, 5, 1, 8, 3);
+	hacer_area_hierba(mapa, 8, 2, 10, 3);	
+	hacer_area_hierba(mapa, 7, 8, 8, 13);	
+	hacer_area_hierba(mapa, 4, 8, 6, 10);
+	hacer_area_hierba(mapa, 6, 7, 7, 7);
+	hacer_area_hierba(mapa, 9, 9, 9, 11);
+	hacer_area_hierba(mapa, 5, 11, 6, 11);		
+	hacer_desfiladero(mapa, 4, 11);
+	return mapa;
 }
 
-
-int compararP(const void *a, const void *b){
-	int real_a = ((int)a);
-	int real_b = ((int)b);
-	return real_b-real_a;
+grafo_t* generar_mapa_dq3(){
+	grafo_t* mapa = generar_cuadricula(11, 18);
+		
+	eliminar_area(mapa, 0, 0, 1, 0);
+	eliminar_area(mapa, 8, 0, 10, 0);
+	eliminar_area(mapa, 7, 1, 10, 1);
+	eliminar_area(mapa, 5, 1, 5, 2);
+	eliminar_area(mapa, 4, 2, 4, 3);
+	eliminar_area(mapa, 10, 0, 10, 6);
+	eliminar_area(mapa, 8, 2, 9, 2);
+	eliminar_area(mapa, 9, 3, 9, 4);
+	eliminar_area(mapa, 10, 16, 10, 17);
+	eliminar_area(mapa, 4, 15, 7, 15);
+	eliminar_area(mapa, 4, 13, 4, 14);
+	eliminar_area(mapa, 2, 4, 3, 8);
+	eliminar_area(mapa, 3, 3, 4, 3);
+	eliminar_area(mapa, 4, 6, 7, 8);
+	eliminar_area(mapa, 6, 9, 7, 14);
+	eliminar_area(mapa, 9, 12, 9, 13);
+	eliminar_area(mapa, 3, 13, 4, 13);
+	eliminar_area(mapa, 8, 13, 9, 13);
+	eliminar_area(mapa, 8, 8, 10, 8);
+	eliminar_area(mapa, 1, 8, 1, 11);
+	eliminar_area(mapa, 1, 11, 3, 11);
+	
+	return mapa;	
 }
 
 grafo_t* generar_mapa_pacman(){
@@ -200,15 +216,22 @@ grafo_t* generar_mapa_pacman(){
 	return mapa;
 }
 
+/* ----------------------------------------------------------------
+ * 
+ * 			PROGRAMA PRINCIPAAAAAALLL
+ * 
+ * ----------------------------------------------------------------*/
+
+
 int main() {
 	
-	grafo_t* mapa = generar_mapa_pacman();
+	grafo_t* mapa = generar_mapa_pokemon();
 	
-	path_finder_t* pf = path_finder_crear(Superheuristica);
+	path_finder_t* pf = path_finder_crear(superheuristica);
 	
+	path_finder_buscar_a_star(pf, mapa, "(5, 0)", "(7, 9)");
 	
-	path_finder_buscar_bfs(pf, mapa, "(4, 0)", "(16, 2)");
-	printf("HAGO BFS DEL (4, 0) AL (16, 2)\n");
+	printf("HAGO BFS DEL (5, 0) AL (7, 9)\n");
 
 	lista_t* vertices = path_finder_camino(pf);
 	printf("CAMINO FINAL: \n");
@@ -221,14 +244,16 @@ int main() {
 	
 	printf("\nLONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
 	
+	print_test("OBS: (10, 7) fue visitada",  path_finder_fue_visitado(pf, "(10, 7)"));
+	print_test("OBS: (10, 2) fue visitada",  path_finder_fue_visitado(pf, "(10, 2)"));
+	print_test("OBS: (0, 12) fue visitada",  path_finder_fue_visitado(pf, "(0, 12)"));
 	
 	path_finder_destruir(pf);
-	
+
+
+
 	grafo_destruir(mapa);
 	
-//	prueba_volumen(100);
-	
-	// Intentamos crear heap
 	
 	return 0;
 }

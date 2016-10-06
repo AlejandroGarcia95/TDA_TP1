@@ -1,6 +1,6 @@
 CARGS= -Wall -pedantic -std=c99 -g
 
-MENSAJE = Todos hechos
+MENSAJE = Generacion de mapas
 
 PRUEBAS= laberintos.c
 EXEC = grafoExec

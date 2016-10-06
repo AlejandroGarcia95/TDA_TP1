@@ -223,7 +223,7 @@ bool ejecutar_recorrido(path_finder_t* pf, grafo_t* grafo, char *origen,
 	// Encolo nodo inicial
 	heap_encolar(q, (void*) inicial);
 	
-	while((!heap_esta_vacio(q)) && (cantVisitados < lista_largo(vertices))){
+	while((!heap_esta_vacio(q)) && (cantVisitados < lista_largo(vertices)) && (!path_finder_fue_visitado(pf, destino))){
 		struct vert_data* vActual = heap_desencolar(q);
 		if(!path_finder_fue_visitado(pf, vActual->vertice)){
 			cantVisitados++;
@@ -244,7 +244,8 @@ bool ejecutar_recorrido(path_finder_t* pf, grafo_t* grafo, char *origen,
 				if(!path_finder_fue_visitado(pf, w)){
 						int ld = vActual->distancia + c;
 						ld += a * grafo_devolver_peso_arista(grafo, vActual->vertice, w);
-						ld += b * pf->h(vActual->vertice, w);
+						//ld += b * pf->h(vActual->vertice, w);
+						ld += b * pf->h(w, destino);
 						struct vert_data* wAdy = vert_data_crear(w, ld, vActual->vertice);
 						if(!wAdy){
 							lista_destruir(vertices, NULL);
@@ -361,32 +362,34 @@ bool path_finder_buscar_bfs(path_finder_t* pf, grafo_t* grafo, char *origen, cha
 		char* cadenita = (char*)malloc(sizeof(char)*(strlen(vActual->padre)+1));
 		strcpy(cadenita, vActual->padre);
 		hash_guardar(pf->padres, vActual->vertice, (void*) cadenita);
-		hash_t* ady = grafo_devolver_adyacentes(grafo, vActual->vertice);
-		hash_iter_t* h_it = hash_iter_crear(ady);
-		if(!h_it){
-			cola_destruir(q, vert_data_destruir);
-			lista_destruir(vertices, NULL);
-			return FALSE;
-			}
-		while(!hash_iter_al_final(h_it)){ // for w adyacente a v
-			char* w = (char*) hash_iter_ver_actual(h_it); 
-			if(!path_finder_fue_visitado(pf, w)){
-					hash_guardar(pf->nodos_visitados, w, (void*)TRUE);
-					int ld = vActual->distancia + 1;
-					struct vert_data* wAdy = vert_data_crear(w, ld, vActual->vertice);
-					if(!wAdy){
-						lista_destruir(vertices, NULL);
-						cola_destruir(q, free);
-						hash_iter_destruir(h_it);
-						return FALSE;
-						}					
-					// Encolo w adyacente
-					cola_encolar(q, (void*) wAdy);
-				}
-			hash_iter_avanzar(h_it);
-			}
-		hash_iter_destruir(h_it);
 		
+		if(!path_finder_fue_visitado(pf, destino)){
+			hash_t* ady = grafo_devolver_adyacentes(grafo, vActual->vertice);
+			hash_iter_t* h_it = hash_iter_crear(ady);
+			if(!h_it){
+				cola_destruir(q, vert_data_destruir);
+				lista_destruir(vertices, NULL);
+				return FALSE;
+				}
+			while(!hash_iter_al_final(h_it)){ // for w adyacente a v
+				char* w = (char*) hash_iter_ver_actual(h_it); 
+				if(!path_finder_fue_visitado(pf, w)){
+						hash_guardar(pf->nodos_visitados, w, (void*)TRUE);
+						int ld = vActual->distancia + 1;
+						struct vert_data* wAdy = vert_data_crear(w, ld, vActual->vertice);
+						if(!wAdy){
+							lista_destruir(vertices, NULL);
+							cola_destruir(q, free);
+							hash_iter_destruir(h_it);
+							return FALSE;
+							}					
+						// Encolo w adyacente
+						cola_encolar(q, (void*) wAdy);
+					}
+				hash_iter_avanzar(h_it);
+				}
+			hash_iter_destruir(h_it);
+			}
 		vert_data_destruir((void*)vActual);
 		}	
 	// Acá encontré un camino => Lo guardo en la lista de camino
