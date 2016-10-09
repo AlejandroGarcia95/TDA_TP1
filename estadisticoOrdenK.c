@@ -160,7 +160,7 @@ void eliminar_repetidos(int *vector, int n, int* pos){
 	
 	for(int i = 0; i < n; i++){
 		
-		char str[100];
+		char str[TAM];
   		sprintf(str, "%d", vector[i]);
 		
 		if (! hash_pertenece(hash, str)) {
