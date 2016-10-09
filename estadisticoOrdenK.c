@@ -229,7 +229,7 @@ int k_selecciones(int vector[], int n, int k, bool sin_repetidos){
 		free(pos);
 	}
 
-	int pos_minimo, primero = 0;
+	int pos_minimo;
 
 	for(int i = 0; i < k + 1; i++){
 		pos_minimo = i;
