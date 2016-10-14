@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "heap.c"
+#include "heap.h"
 #include "estadisticoOrdenK.h"
+#include <time.h>
 
 #define TAM 20
 
@@ -133,9 +134,11 @@ int comparar_numeros_max(int *a, int *b){
 
 
 /* Función partition de QuickSort. */
-int partition(int vector[], int inicial, int ultimo){
+int partition(int* vector, int inicial, int ultimo){
 	int j;
-	int pivote = vector[ultimo];
+	int pivoteIndex = inicial + (ultimo-inicial)/2;
+	int pivote = vector[inicial + (ultimo-inicial)/2];
+	swap(&vector[pivoteIndex], &vector[ultimo]);
 	int i = inicial;
 
 	for(j = inicial; j < ultimo; j++){
@@ -257,7 +260,7 @@ int k_heapsort(int vector[], int n, int k, bool sin_repetidos){
 		free(pos);
 	}
 
-	void *vector_aux[TAM];
+	void** vector_aux = (void**)malloc(sizeof(void*)*n);
 	for(int i = 0; i < n; i++){
 		vector_aux[i]=(void*)&vector[i];
 	}
@@ -269,7 +272,7 @@ int k_heapsort(int vector[], int n, int k, bool sin_repetidos){
 		kEstadistico = heap_desencolar(heap);	
 
 	heap_destruir(heap, NULL);
-	
+	free(vector_aux);
 	return (*kEstadistico);
 	
 }
@@ -313,7 +316,7 @@ int heap_select(int vector[], int n, int k, bool sin_repetidos){
  * booleano indicando si se consideran los elementos repetidos en el orden k.
  * Se utiliza una estrategia de división y conquista similar a la de quicksort pero 
  * descartando las divisiones que sabemos que no incluyen al k buscado. */
-int quick_select(int vector[], int primero, int ultimo, int k, bool sin_repetidos){
+int quick_select(int* vector, int primero, int ultimo, int k, bool sin_repetidos){
 	
 	if (sin_repetidos){
 		int *pos = malloc(sizeof(int));
@@ -1131,15 +1134,73 @@ void prueba_quick_select(){
 }
 
 
+int quick_select_wrapper(int vector[], int n, int k, bool sin_repetidos) {
+	return quick_select(vector, 0, n-1, k, sin_repetidos);
+}
+#define TOPE 30000
+#define REP 25
+void medir_tiempos(int vector[], int largo, int (*estadistico)(int*, int, int, bool)) {
+	clock_t start, end;
+	double dif = 0.0;
+	for (int j = 0; j < REP; j++) {
+		start = clock();
+		estadistico(vector, largo, largo/10, false);  
+		end = clock();
+		dif += ((double)(end-start))/CLOCKS_PER_SEC;
+	}
+	dif = dif/REP;
+	printf ("  %.5f seg\n", dif );
+}
+
+
+void copiar_vector(int *from, int* to, int size) {
+	for (int i = 0; i < size; i++) {
+		to[i] = from[i];
+	}
+}
+
 /* Función principal que ejecuta las pruebas para cada algoritmo que obtiene el estadístico de orden k. */
 int main(){
-
+/*
 	prueba_fuerza_bruta();
 	prueba_ordenar_y_seleccionar();
 	prueba_k_selecciones();
 	prueba_k_heapsort();
 	prueba_heap_select();
 	prueba_quick_select();
+*/
 
+	int tamanios[] = {100, 500, 1000, 5000};
+	
+	printf("Probando con k/2, elementos entre 0 y 30000\n");
+	for (int j = 0; j <= 3; j++){
+		int tam = tamanios[j];
+		int* vector = malloc(sizeof(int)*tam);
+		int* orig = malloc(sizeof(int)*tam);
+		for(int i = 0; i < tam; i++) {
+			orig[i] = rand() % TOPE;
+		}
+		printf("Tam = %d\n", tam);
+		printf("FB:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &fuerza_bruta);
+		printf("HS:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &heap_select);
+		printf("OS:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &ordenar_y_seleccionar);
+		printf("KH:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &k_heapsort);
+		printf("KS:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &k_selecciones);
+		printf("QS:");
+		copiar_vector(orig, vector, tam);
+		medir_tiempos(vector, tam, &quick_select_wrapper);
+		free(vector);
+		free(orig);
+	}
 	return 0;
 }
