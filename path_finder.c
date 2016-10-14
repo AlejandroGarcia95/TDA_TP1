@@ -180,7 +180,7 @@ bool generar_camino_final(path_finder_t* pf, grafo_t* grafo, char* origen, char*
 // Para poder generar los recorridos según el algoritmo de Dijkstra, BFS,
 // A* ó con función heurística, este algoritmo parametriza la distancia
 // de cada nodo de la siguiente forma:
-// dist(v) = dist(w) + A*peso(w, v) + B*heuristica(w, v) + C
+// dist(v) = dist(w) + A*peso(w, v) + B*heuristica(v, destino) + C
 // donde w es el padre de v, y A, B, C son ctes recibidas por parámetro.
 // De esta forma, se observan los algoritmos mencionados como casos 
 // particulares de esta parametrización:
@@ -398,7 +398,6 @@ bool path_finder_buscar_bfs(path_finder_t* pf, grafo_t* grafo, char *origen, cha
 		lista_destruir(vertices, NULL);
 		return FALSE;
 		}	
-		
 	
 	cola_destruir(q, vert_data_destruir);
 	lista_destruir(vertices, NULL);

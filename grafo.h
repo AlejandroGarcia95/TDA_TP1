@@ -87,10 +87,6 @@ hash_t* grafo_devolver_conexiones(grafo_t* grafo);
 // Post: se devolvio el peso de dicha conexion
 int grafo_devolver_peso_arista(grafo_t *grafo, char *origen, char *destino);
 
-// Imprime el grafo.
-// Pre: el grafo fue creado.
-void grafo_imprimir(grafo_t *grafo);
-
 // Devuelve una lista con las claves de todos los vértices 
 // del grafo. Si el grafo está vacío, devuelve una lista vacía.
 // Pre: el grafo fue creado.

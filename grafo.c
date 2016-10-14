@@ -8,8 +8,6 @@
 #include "heap.h"
 #include "grafo.h"
 
-
-
 // Wrapper del destructor del hash
 void destructor_hash(void* hash) {
 	hash_destruir((hash_t*) hash);
@@ -219,38 +217,4 @@ lista_t* grafo_vertices(grafo_t* grafo){
 	hash_iter_destruir(it);
 	return vertices;
 	
-}
-
-
-// Imprime el grafo.
-// Pre: el grafo fue creado.
-void grafo_imprimir(grafo_t *grafo) {
-	
-	printf("GRAFO CANT: %zu\n", grafo_cantidad(grafo));
-	
-	hash_iter_t* iter_hash = hash_iter_crear(grafo->nodos);
-	if (!iter_hash) return;
-
-	// Primero itero sobre cada clave del hash... cada vertice
-	while (!hash_iter_al_final(iter_hash)) {
-		char* clave_vertice = (char*)hash_iter_ver_actual(iter_hash);
-		printf("Vertice %s. Conectado a:\n",clave_vertice);
-		hash_t* caminos_origen = (hash_t*)hash_obtener(grafo->nodos, clave_vertice);
-		hash_iter_t* iter_minihash = hash_iter_crear(caminos_origen);
-		if (!iter_minihash) {
-			hash_iter_destruir(iter_hash);
-			return;
-		}
-		// Creo un iterador en cada minihash e imprimo todas las aritas
-		while (!hash_iter_al_final(iter_minihash)) {
-			const char* clave_destino = hash_iter_ver_actual(iter_minihash);
-			int* peso_destino = (int*)hash_obtener(caminos_origen, clave_destino);
-			printf("\t\t\t%s(%d)\n ", clave_destino, *peso_destino);
-			hash_iter_avanzar(iter_minihash);
-		}
-		printf("\n");
-		hash_iter_destruir(iter_minihash);
-		hash_iter_avanzar(iter_hash);
-	}
-	hash_iter_destruir(iter_hash);
 }

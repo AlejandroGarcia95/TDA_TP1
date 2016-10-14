@@ -36,7 +36,7 @@ int superheuristica(char *origen, char* destino){
 	int delta_x = xf - xi;
 	if(delta_x < 0)
 		delta_x *= -1;
-	return delta_y + delta_x;
+	return (delta_x + delta_y);
 }
 
 /*		FUNCIONES AUXILIARES PARA GENERAR EL GRAFO/MAPA 	*/
@@ -71,6 +71,56 @@ grafo_t* generar_cuadricula(int anchoX, int largoY){
 			grafo_crear_arista(mapa, nodo, adyArriba, FALSE, 1);
 			grafo_crear_arista(mapa, nodo, adyIzq, FALSE, 1);
 		}
+	return mapa;
+}
+
+/* Genera un grafo a modo de cuadrícula de tamaño anchoX por largoY.
+Cada nodo del grafo tiene de clave el string "(x, y)" siendo esta la
+coordenada x,y del nodo en la cuadrícula. La función conecta cada nodo
+de 3 formas diferentes de acuerdo a los parámetros pesoN y pesoT:
+	- Si pesoN < pesoT, todas las aristas tienen un peso aleatorio en
+	el intervalo (pesoN, pesoT)
+	- Si pesoN > pesoT, todas las aristas tienen un peso aleatorio en
+	el intervalo (pesoT, pesoN)
+	- Si pesoN = pesoT, todas las aristas tienen el mismo peso y
+	es pesoN     */
+grafo_t* generar_cuadricula_random(int anchoX, int largoY, int pesoN, int pesoT){
+	srand (time(NULL));
+	grafo_t *mapa = grafo_crear();
+	if(!mapa) return NULL;
+	// Creo primero todos los vértices
+	char nodo[13];
+	for(int i = 0; i < anchoX; i++)
+		for(int j = 0; j < largoY; j++){
+			sprintf(nodo, "(%d, %d)", i, j);
+			grafo_crear_vertice(mapa, nodo);
+			}
+
+	// Ahora para todos los vértices, agrego sus cuatro adyacentes
+	char adyAbajo[13], adyArriba[13], adyDer[13], adyIzq[13];
+	for(int i = 0; i < anchoX; i++)		
+		for(int j = 0; j < largoY; j++){
+			// Armo los pesos de las aristas
+			int pesos[4];
+			for(int k = 0; k < 4; k++){
+				if(pesoN == pesoT)
+					pesos[k] = pesoN;
+				else if(pesoN < pesoT)
+					pesos[k] = (rand() % (pesoT - pesoN + 1)) + pesoN;
+				else
+					pesos[k] = (rand() % (pesoN - pesoT + 1)) + pesoT;
+			}
+			
+			sprintf(nodo, "(%d, %d)", i, j);
+			sprintf(adyAbajo, "(%d, %d)", i, j+1);
+			sprintf(adyArriba, "(%d, %d)", i, j-1);
+			sprintf(adyDer, "(%d, %d)", i+1, j);
+			sprintf(adyIzq, "(%d, %d)", i-1, j);
+			grafo_crear_arista(mapa, nodo, adyAbajo, FALSE, pesos[0]);
+			grafo_crear_arista(mapa, nodo, adyDer, FALSE, pesos[1]);
+			grafo_crear_arista(mapa, nodo, adyArriba, FALSE, pesos[2]);
+			grafo_crear_arista(mapa, nodo, adyIzq, FALSE, pesos[3]);
+			}
 	return mapa;
 }
 
@@ -222,17 +272,34 @@ grafo_t* generar_mapa_pacman(){
  * 
  * ----------------------------------------------------------------*/
 
-
-int main() {
-	
-	grafo_t* mapa = generar_mapa_pokemon();
-	
+int test_analisis_posteriores(){
+	grafo_t* mapa = generar_cuadricula_random(100, 100, 250, 275);
 	path_finder_t* pf = path_finder_crear(superheuristica);
 	
-	path_finder_buscar_a_star(pf, mapa, "(5, 0)", "(7, 9)");
+	path_finder_buscar_bfs(pf, mapa, "(0, 0)", "(99, 99)");
+	printf("\nLONG FINAL DEL CAMINO PARA BFS: %d\n", path_finder_longitud_camino(pf));
 	
-	printf("HAGO BFS DEL (5, 0) AL (7, 9)\n");
+	path_finder_buscar_heuristica(pf, mapa, "(0, 0)", "(99, 99)");
+	printf("\nLONG FINAL DEL CAMINO PARA HEURISTICA: %d\n", path_finder_longitud_camino(pf));
+	
+	path_finder_buscar_dijkstra(pf, mapa, "(0, 0)", "(99, 99)");
+	printf("\nLONG FINAL DEL CAMINO PARA DIJKSTRA: %d\n", path_finder_longitud_camino(pf));
+	
+	path_finder_buscar_a_star(pf, mapa, "(0, 0)", "(99, 99)");
+	printf("\nLONG FINAL DEL CAMINO PARA A*: %d\n", path_finder_longitud_camino(pf));	
+			
+	path_finder_destruir(pf);
+	grafo_destruir(mapa);
+	return 0;
+}
 
+int test_mejores_peores_casos() {
+	grafo_t* mapa = generar_mapa_pokemon();
+	path_finder_t* pf = path_finder_crear(superheuristica);
+	
+	path_finder_buscar_a_star(pf, mapa, "(3, 10)", "(3, 0)");
+
+	// Mostrar el camino final
 	lista_t* vertices = path_finder_camino(pf);
 	printf("CAMINO FINAL: \n");
 	lista_iter_t* it = lista_iter_crear(vertices);
@@ -242,18 +309,21 @@ int main() {
 		}
 	lista_iter_destruir(it);
 	
-	printf("\nLONG DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
+	printf("\nLONG FINAL DEL CAMINO: %d\n", path_finder_longitud_camino(pf));
 	
-	print_test("OBS: (10, 7) fue visitada",  path_finder_fue_visitado(pf, "(10, 7)"));
-	print_test("OBS: (10, 2) fue visitada",  path_finder_fue_visitado(pf, "(10, 2)"));
-	print_test("OBS: (0, 12) fue visitada",  path_finder_fue_visitado(pf, "(0, 12)"));
+	// Sección de visitados: Permite ver si un algoritmo visitó o no
+	// alguno(s) vértice(s)
+	print_test("Vértice (3, 5) fue visitado",  path_finder_fue_visitado(pf, "(3, 5)"));
+	print_test("Vértice (10, 13) fue visitado",  path_finder_fue_visitado(pf, "(10, 13)"));
+	print_test("Vértice (0, 10) fue visitado",  path_finder_fue_visitado(pf, "(0, 10)"));
 	
 	path_finder_destruir(pf);
-
-
-
 	grafo_destruir(mapa);
-	
-	
+	return 0;
+}
+
+int main(){
+	return test_analisis_posteriores();
+
 	return 0;
 }
